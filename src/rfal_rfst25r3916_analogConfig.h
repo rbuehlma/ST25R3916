@@ -91,6 +91,9 @@
 #define RFAL_ANALOG_CONFIG_BITRATE_1695             (0x0050U) /*!< 1695kbits/s settings in Analog Configuration ID              */
 #define RFAL_ANALOG_CONFIG_BITRATE_3390             (0x0060U) /*!< 3390kbits/s settings in Analog Configuration ID              */
 #define RFAL_ANALOG_CONFIG_BITRATE_6780             (0x0070U) /*!< 6780kbits/s settings in Analog Configuration ID              */
+#define RFAL_ANALOG_CONFIG_BITRATE_53               (0x00B0U) /*!< 53kbits/s (ISO15693 x2) setting in Analog Configuration ID   */
+#define RFAL_ANALOG_CONFIG_BITRATE_26               (0x00C0U) /*!< 26kbit/s (1 out of 4) NFC-V setting Analog Configuration ID  */
+#define RFAL_ANALOG_CONFIG_BITRATE_1p6              (0x00D0U) /*!< 1.6kbit/s (1 out of 256) NFC-V setting Analog Config ID      */
 #define RFAL_ANALOG_CONFIG_BITRATE_1OF4             (0x00C0U) /*!< 1 out of 4 for NFC-V setting in Analog Configuration ID      */
 #define RFAL_ANALOG_CONFIG_BITRATE_1OF256           (0x00D0U) /*!< 1 out of 256 for NFC-V setting in Analog Configuration ID    */
 

@@ -106,8 +106,8 @@ struct st25r3916StreamConfig {
 #define ST25R3916_CMD_CLEAR_RSSI               0xDAU    /*!< Clear RSSI bits and restart the measurement             */
 #define ST25R3916_CMD_CLEAR_FIFO               0xDBU    /*!< Clears FIFO, Collision and IRQ status                   */
 #define ST25R3916_CMD_TRANSPARENT_MODE         0xDCU    /*!< Transparent mode                                        */
-#define ST25R3916_CMD_CALIBRATE_C_SENSOR       0xDDU    /*!< Calibrate the capacitive sensor                         */
-#define ST25R3916_CMD_MEASURE_CAPACITANCE      0xDEU    /*!< Measure capacitance                                     */
+#define ST25R3916_CMD_CALIBRATE_C_SENSOR       0xDDU    /*!< Calibrate the capacitive sensor (ST25R3916 only)        */
+#define ST25R3916_CMD_MEASURE_CAPACITANCE      0xDEU    /*!< Measure capacitance (ST25R3916 only)                    */
 #define ST25R3916_CMD_MEASURE_VDD              0xDFU    /*!< Measure power supply voltage                            */
 #define ST25R3916_CMD_START_GP_TIMER           0xE0U    /*!< Start the general purpose timer                         */
 #define ST25R3916_CMD_START_WUP_TIMER          0xE1U    /*!< Start the wake-up timer                                 */
@@ -115,6 +115,7 @@ struct st25r3916StreamConfig {
 #define ST25R3916_CMD_START_NO_RESPONSE_TIMER  0xE3U    /*!< Start the no-response timer                             */
 #define ST25R3916_CMD_START_PPON2_TIMER        0xE4U    /*!< Start PPon2 timer                                       */
 #define ST25R3916_CMD_STOP_NRT                 0xE8U    /*!< Stop No Response Timer                                  */
+#define ST25R3916_CMD_RC_CAL                   0xEAU    /*!< Trigger RC calibration (ST25R3916B only)                */
 #define ST25R3916_CMD_SPACE_B_ACCESS           0xFBU    /*!< Enable R/W access to the test registers                 */
 #define ST25R3916_CMD_TEST_ACCESS              0xFCU    /*!< Enable R/W access to the test registers                 */
 
@@ -164,6 +165,9 @@ struct st25r3916StreamConfig {
 
 /*! Checks if the Oscillator is enabled  */
 #define st25r3916IsOscOn()            st25r3916CheckReg( ST25R3916_REG_OP_CONTROL, ST25R3916_REG_OP_CONTROL_en, ST25R3916_REG_OP_CONTROL_en )
+
+/*! Checks if the AAT is enabled  */
+#define st25r3916IsAATOn()            st25r3916CheckReg( ST25R3916_REG_IO_CONF2, ST25R3916_REG_IO_CONF2_aat_en, ST25R3916_REG_IO_CONF2_aat_en )
 
 /*
 ******************************************************************************

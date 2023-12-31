@@ -282,6 +282,14 @@ typedef void (*ST25R3916IrqHandler)(void);
 #define RFAL_ST25R3916_AAT_SETTLE_OFF   20U                                           /*!< Time in ms required for AAT pins and Osc to settle after en bit off             */
 #define RFAL_ST25R3916_AAT_SETTLE_ON    5U                                            /*!< Time in ms required for AAT pins and Osc to settle after en bit on              */
 
+#ifndef RFAL_ST25R3916_AAT_SETTLE
+    #define RFAL_ST25R3916_AAT_SETTLE   5U                                            /*!< Time in ms required for AAT pins and Osc to settle after en bit set             */
+#endif /* RFAL_ST25R3916_AAT_SETTLE */
+
+#ifndef RFAL_ST25R3916B_AAT_SETTLE
+    #define RFAL_ST25R3916B_AAT_SETTLE  ST25R3916_REG_MEAS_TX_DELAY_meas_tx_del_4_83ms/*!< Time between Oscilator stable and TX On in meas_tx_del steps                    */
+#endif /* RFAL_ST25R3916B_AAT_SETTLE */
+
 
 /*! FWT adjustment:
  *    64 : NRT jitter between TXE and NRT start      */
@@ -1341,6 +1349,24 @@ class RfalRfST25R3916Class : public RfalRfClass {
      */
     ReturnCode st25r3916GetRSSI(uint16_t *amRssi, uint16_t *pmRssi);
 
+    /*!
+     *****************************************************************************
+     *  \brief  Check if chip is an ST25R3916 version
+     *
+     *  \return  true when IC type is an ST25R3916
+     *  \return  false otherwise
+     */
+    bool st25r3916ChipIsST25R3916();
+
+    /*!
+     *****************************************************************************
+     *  \brief  Check if chip is an ST25R3916B version
+     *
+     *  \return  true when IC type is an ST25R3916B
+     *  \return  false otherwise
+     */
+    bool st25r3916ChipIsST25R3916B();
+
 
     /*
     ******************************************************************************
@@ -1975,6 +2001,7 @@ class RfalRfST25R3916Class : public RfalRfClass {
     int cs_pin;
     int int_pin;
     uint32_t spi_speed;
+    uint8_t chipId;
 
     rfal gRFAL;              /*!< RFAL module instance               */
     rfalAnalogConfigMgmt gRfalAnalogConfigMgmt;  /*!< Analog Configuration LUT management */

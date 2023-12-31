@@ -47,6 +47,7 @@ RfalRfST25R3916Class::RfalRfST25R3916Class(SPIClass *spi, int cs_pin, int int_pi
   memset((void *)&st25r3916interrupt, 0, sizeof(st25r3916Interrupt));
   timerStopwatchTick = 0;
   i2c_enabled = false;
+  chipId = 0;
   dev_i2c = NULL;
   isr_pending = false;
   bus_busy = false;
@@ -62,6 +63,7 @@ RfalRfST25R3916Class::RfalRfST25R3916Class(TwoWire *i2c, int int_pin) : dev_i2c(
   memset((void *)&st25r3916interrupt, 0, sizeof(st25r3916Interrupt));
   timerStopwatchTick = 0;
   i2c_enabled = true;
+  chipId = 0;
   dev_spi = NULL;
   isr_pending = false;
   bus_busy = false;
@@ -876,6 +878,16 @@ ReturnCode RfalRfST25R3916Class::rfalStartTransceive(const rfalTransceiveContext
       /* Skip logic below that would go directly into receive                        */
       if (gRFAL.TxRx.ctx.txBuf != NULL) {
         return  ERR_NONE;
+      }
+    }
+
+    if (st25r3916ChipIsST25R3916B())
+    {
+      /* Check if ST25R3916 AWS is enabled and AP2P */
+      if( st25r3916CheckReg( ST25R3916_REG_AUX_MOD, ST25R3916_REG_AUX_MOD_rgs_am, ST25R3916_REG_AUX_MOD_rgs_am) && rfalIsModeActiveComm(gRFAL.mode) )
+      {
+          /* If ST25R3916 with AWS set again the current mode to reload AWS config */
+          rfalSetMode( gRFAL.mode, gRFAL.txBR, gRFAL.rxBR );
       }
     }
 
@@ -1856,6 +1868,16 @@ void RfalRfST25R3916Class::rfalTransceiveRx(void)
 
       if ((irqs & ST25R3916_IRQ_MASK_EON) != 0U) {
         gRFAL.TxRx.state = RFAL_TXRX_STATE_RX_WAIT_RXS;
+
+        if (st25r3916ChipIsST25R3916B())
+        {
+          /* Check if ST25R3916 AWS is enabled */
+          if( st25r3916CheckReg( ST25R3916_REG_AUX_MOD, ST25R3916_REG_AUX_MOD_rgs_am, ST25R3916_REG_AUX_MOD_rgs_am) )
+          {
+              /* Set Analog configurations for our own following Field On */
+              rfalSetAnalogConfig( (RFAL_ANALOG_CONFIG_TECH_CHIP | RFAL_ANALOG_CONFIG_CHIP_FIELD_ON) );
+          }
+        }
       }
 
       if ((irqs & ST25R3916_IRQ_MASK_NRE) != 0U) {
@@ -2441,8 +2463,34 @@ ReturnCode RfalRfST25R3916Class::rfalWakeUpModeStart(const rfalWakeUpConfig *con
     gRFAL.wum.cfg.indAmp.delta     = 2U;
     gRFAL.wum.cfg.indAmp.reference = RFAL_WUM_REFERENCE_AUTO;
     gRFAL.wum.cfg.indAmp.autoAvg   = false;
+    if (st25r3916ChipIsST25R3916())
+    {
+      /*******************************************************************************/
+      /* Check if AAT is enabled and if so make use of the SW Tag Detection          */
+      if( st25r3916IsAATOn() )
+      {
+          /* Enable SW TD with delta of 1.5 and enable auto average */
+          gRFAL.wum.cfg.swTagDetect      = true;
+          gRFAL.wum.cfg.indAmp.delta     = 1U;
+          gRFAL.wum.cfg.indAmp.fracDelta = 2U;
+          gRFAL.wum.cfg.indAmp.autoAvg   = true;
+          gRFAL.wum.cfg.indAmp.aaWeight  = RFAL_WUM_AA_WEIGHT_16;
+      }
+    }
   } else {
     gRFAL.wum.cfg = *config;
+  }
+
+  if (st25r3916ChipIsST25R3916B())
+  {
+    /* Check for not supported features */
+    if( gRFAL.wum.cfg.cap.enabled )
+    {
+        return ERR_NOTSUPP;
+    }
+
+    /* Set ST25R3916B Measure Tx delay */
+    st25r3916WriteRegister(ST25R3916_REG_MEAS_TX_DELAY, ( st25r3916IsAATOn() ? RFAL_ST25R3916B_AAT_SETTLE : 0x00) );
   }
 
   /* Check for valid configuration */
@@ -2533,39 +2581,42 @@ ReturnCode RfalRfST25R3916Class::rfalWakeUpModeStart(const rfalWakeUpConfig *con
     irqs |= ST25R3916_IRQ_MASK_WPH;
   }
 
-  /*******************************************************************************/
-  /* Check if Capacitive is to be performed */
-  if (gRFAL.wum.cfg.cap.enabled) {
+  if (st25r3916ChipIsST25R3916())
+  {
     /*******************************************************************************/
-    /* Perform Capacitive sensor calibration */
+    /* Check if Capacitive is to be performed */
+    if (gRFAL.wum.cfg.cap.enabled) {
+      /*******************************************************************************/
+      /* Perform Capacitive sensor calibration */
 
-    /* Disable Oscillator and Field */
-    st25r3916ClrRegisterBits(ST25R3916_REG_OP_CONTROL, (ST25R3916_REG_OP_CONTROL_en | ST25R3916_REG_OP_CONTROL_tx_en));
+      /* Disable Oscillator and Field */
+      st25r3916ClrRegisterBits(ST25R3916_REG_OP_CONTROL, (ST25R3916_REG_OP_CONTROL_en | ST25R3916_REG_OP_CONTROL_tx_en));
 
-    /* Sensor gain should be configured on Analog Config: RFAL_ANALOG_CONFIG_CHIP_WAKEUP_ON */
+      /* Sensor gain should be configured on Analog Config: RFAL_ANALOG_CONFIG_CHIP_WAKEUP_ON */
 
-    /* Perform calibration procedure */
-    st25r3916CalibrateCapacitiveSensor(NULL);
+      /* Perform calibration procedure */
+      st25r3916CalibrateCapacitiveSensor(NULL);
 
 
-    /*******************************************************************************/
-    aux  = (uint8_t)((gRFAL.wum.cfg.cap.delta) << ST25R3916_REG_CAPACITANCE_MEASURE_CONF_cm_d_shift);
-    aux |= (uint8_t)(gRFAL.wum.cfg.cap.aaInclMeas ? ST25R3916_REG_CAPACITANCE_MEASURE_CONF_cm_aam : 0x00U);
-    aux |= (uint8_t)(((uint8_t)gRFAL.wum.cfg.cap.aaWeight << ST25R3916_REG_CAPACITANCE_MEASURE_CONF_cm_aew_shift) & ST25R3916_REG_CAPACITANCE_MEASURE_CONF_cm_aew_mask);
-    aux |= (uint8_t)(gRFAL.wum.cfg.cap.autoAvg ? ST25R3916_REG_CAPACITANCE_MEASURE_CONF_cm_ae : 0x00U);
+      /*******************************************************************************/
+      aux  = (uint8_t)((gRFAL.wum.cfg.cap.delta) << ST25R3916_REG_CAPACITANCE_MEASURE_CONF_cm_d_shift);
+      aux |= (uint8_t)(gRFAL.wum.cfg.cap.aaInclMeas ? ST25R3916_REG_CAPACITANCE_MEASURE_CONF_cm_aam : 0x00U);
+      aux |= (uint8_t)(((uint8_t)gRFAL.wum.cfg.cap.aaWeight << ST25R3916_REG_CAPACITANCE_MEASURE_CONF_cm_aew_shift) & ST25R3916_REG_CAPACITANCE_MEASURE_CONF_cm_aew_mask);
+      aux |= (uint8_t)(gRFAL.wum.cfg.cap.autoAvg ? ST25R3916_REG_CAPACITANCE_MEASURE_CONF_cm_ae : 0x00U);
 
-    st25r3916WriteRegister(ST25R3916_REG_CAPACITANCE_MEASURE_CONF, aux);
+      st25r3916WriteRegister(ST25R3916_REG_CAPACITANCE_MEASURE_CONF, aux);
 
-    /* Only need to set the reference if not using Auto Average */
-    if (!gRFAL.wum.cfg.cap.autoAvg || gRFAL.wum.cfg.swTagDetect) {
-      if (gRFAL.wum.cfg.indPha.reference == RFAL_WUM_REFERENCE_AUTO) {
-        st25r3916MeasureCapacitance(&gRFAL.wum.cfg.cap.reference);
+      /* Only need to set the reference if not using Auto Average */
+      if (!gRFAL.wum.cfg.cap.autoAvg || gRFAL.wum.cfg.swTagDetect) {
+        if (gRFAL.wum.cfg.indPha.reference == RFAL_WUM_REFERENCE_AUTO) {
+          st25r3916MeasureCapacitance(&gRFAL.wum.cfg.cap.reference);
+        }
+        st25r3916WriteRegister(ST25R3916_REG_CAPACITANCE_MEASURE_REF, gRFAL.wum.cfg.cap.reference);
       }
-      st25r3916WriteRegister(ST25R3916_REG_CAPACITANCE_MEASURE_REF, gRFAL.wum.cfg.cap.reference);
-    }
 
-    reg  |= ST25R3916_REG_WUP_TIMER_CONTROL_wcap;
-    irqs |= ST25R3916_IRQ_MASK_WCAP;
+      reg  |= ST25R3916_REG_WUP_TIMER_CONTROL_wcap;
+      irqs |= ST25R3916_IRQ_MASK_WCAP;
+    }
   }
 
 
@@ -2632,9 +2683,12 @@ void RfalRfST25R3916Class::rfalRunWakeUpModeWorker(void)
         gRFAL.wum.state = RFAL_WUM_STATE_ENABLED_WOKE;
       }
 
-      if ((irqs & ST25R3916_IRQ_MASK_WCAP) != 0U) {
-        st25r3916ReadRegister(ST25R3916_REG_CAPACITANCE_MEASURE_RESULT, &reg);
-        gRFAL.wum.state = RFAL_WUM_STATE_ENABLED_WOKE;
+      if (st25r3916ChipIsST25R3916())
+      {
+        if ((irqs & ST25R3916_IRQ_MASK_WCAP) != 0U) {
+          st25r3916ReadRegister(ST25R3916_REG_CAPACITANCE_MEASURE_RESULT, &reg);
+          gRFAL.wum.state = RFAL_WUM_STATE_ENABLED_WOKE;
+        }
       }
 
       if ((irqs & ST25R3916_IRQ_MASK_WT) != 0U) {

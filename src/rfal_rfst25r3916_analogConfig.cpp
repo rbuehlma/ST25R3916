@@ -77,8 +77,16 @@ void RfalRfST25R3916Class::rfalAnalogConfigInitialize(void)
   /* Use default Analog configuration settings in Flash by default. */
 
   /* Check whether the Default Analog settings are to be used or custom ones */
-  gRfalAnalogConfigMgmt.currentAnalogConfigTbl = (const uint8_t *)&rfalAnalogConfigDefaultSettings;
-  gRfalAnalogConfigMgmt.configTblSize          = sizeof(rfalAnalogConfigDefaultSettings);
+  if (st25r3916ChipIsST25R3916B())
+  {
+    gRfalAnalogConfigMgmt.currentAnalogConfigTbl = (const uint8_t *)&rfalST25R3916BAnalogConfigDefaultSettings;
+    gRfalAnalogConfigMgmt.configTblSize          = sizeof(rfalST25R3916BAnalogConfigDefaultSettings);
+  }
+  else
+  {
+    gRfalAnalogConfigMgmt.currentAnalogConfigTbl = (const uint8_t *)&rfalST25R3916AnalogConfigDefaultSettings;
+    gRfalAnalogConfigMgmt.configTblSize          = sizeof(rfalST25R3916AnalogConfigDefaultSettings);
+  }
 
   gRfalAnalogConfigMgmt.ready = true;
 } /* rfalAnalogConfigInitialize() */

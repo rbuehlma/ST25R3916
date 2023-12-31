@@ -53,6 +53,7 @@
 #define ST25R3916_TOUT_MEASURE_PHASE          10U     /*!< Max duration time of Measure Phase command         Datasheet: 25us  */
 #define ST25R3916_TOUT_MEASURE_CAPACITANCE    10U     /*!< Max duration time of Measure Capacitance command   Datasheet: 25us  */
 #define ST25R3916_TOUT_CALIBRATE_CAP_SENSOR   4U      /*!< Max duration Calibrate Capacitive Sensor command   Datasheet: 3ms   */
+#define ST25R3916_TOUT_CALIBRATE_AWS_RC       10U     /*!< Max duration Calibrate RC command                  Datasheet: 5ms   */
 #define ST25R3916_TOUT_OSC_STABLE             10U     /*!< Timeout for Oscillator to get stable,              Datasheet: 700us */
 #define ST25R3916_TOUT_ADJUST_REGULATORS      6U      /*!< Max duration time of Adjust Regulators command     Datasheet: 5ms   */
 #define ST25R3916_TOUT_CA                     10U     /*!< Max duration time of Collision Avoidance command                    */
@@ -108,6 +109,12 @@ ReturnCode RfalRfST25R3916Class::st25r3916Initialize(void)
 
   /* Enable Oscillator and wait until it gets stable */
   st25r3916OscOn();
+
+  if (st25r3916ChipIsST25R3916B())
+  {
+    /* Trigger RC calibration */
+    st25r3916ExecuteCommandAndGetResult( ST25R3916_CMD_RC_CAL,  ST25R3916_REG_AWS_RC_CAL, ST25R3916_TOUT_CALIBRATE_AWS_RC, NULL );
+  }
 
   /* Measure VDD and set sup3V bit according to Power supplied  */
   vdd_mV = st25r3916MeasureVoltage(ST25R3916_REG_REGULATOR_CONTROL_mpsv_vdd);
@@ -237,33 +244,47 @@ ReturnCode RfalRfST25R3916Class::st25r3916MeasurePhase(uint8_t *result)
 /*******************************************************************************/
 ReturnCode RfalRfST25R3916Class::st25r3916MeasureCapacitance(uint8_t *result)
 {
-  return st25r3916ExecuteCommandAndGetResult(ST25R3916_CMD_MEASURE_CAPACITANCE, ST25R3916_REG_AD_RESULT, ST25R3916_TOUT_MEASURE_CAPACITANCE, result);
+  if (st25r3916ChipIsST25R3916B())
+  {
+    return ERR_NOTSUPP;
+  }
+  else
+  {
+    return st25r3916ExecuteCommandAndGetResult(ST25R3916_CMD_MEASURE_CAPACITANCE, ST25R3916_REG_AD_RESULT, ST25R3916_TOUT_MEASURE_CAPACITANCE, result);
+  }
 }
 
 
 /*******************************************************************************/
 ReturnCode RfalRfST25R3916Class::st25r3916CalibrateCapacitiveSensor(uint8_t *result)
 {
-  ReturnCode ret;
-  uint8_t    res;
-
-  /* Clear Manual calibration values to enable automatic calibration mode */
-  st25r3916ClrRegisterBits(ST25R3916_REG_CAP_SENSOR_CONTROL, ST25R3916_REG_CAP_SENSOR_CONTROL_cs_mcal_mask);
-
-  /* Execute automatic calibration */
-  ret = st25r3916ExecuteCommandAndGetResult(ST25R3916_CMD_CALIBRATE_C_SENSOR, ST25R3916_REG_CAP_SENSOR_RESULT, ST25R3916_TOUT_CALIBRATE_CAP_SENSOR, &res);
-
-  /* Check whether the calibration was successull */
-  if (((res & ST25R3916_REG_CAP_SENSOR_RESULT_cs_cal_end) != ST25R3916_REG_CAP_SENSOR_RESULT_cs_cal_end) ||
-      ((res & ST25R3916_REG_CAP_SENSOR_RESULT_cs_cal_err) == ST25R3916_REG_CAP_SENSOR_RESULT_cs_cal_err) || (ret != ERR_NONE)) {
-    return ERR_IO;
+  if (st25r3916ChipIsST25R3916B())
+  {
+    return ERR_NOTSUPP;
   }
+  else
+  {
+    ReturnCode ret;
+    uint8_t    res;
 
-  if (result != NULL) {
-    (*result) = (uint8_t)(res >> ST25R3916_REG_CAP_SENSOR_RESULT_cs_cal_shift);
+    /* Clear Manual calibration values to enable automatic calibration mode */
+    st25r3916ClrRegisterBits(ST25R3916_REG_CAP_SENSOR_CONTROL, ST25R3916_REG_CAP_SENSOR_CONTROL_cs_mcal_mask);
+
+    /* Execute automatic calibration */
+    ret = st25r3916ExecuteCommandAndGetResult(ST25R3916_CMD_CALIBRATE_C_SENSOR, ST25R3916_REG_CAP_SENSOR_RESULT, ST25R3916_TOUT_CALIBRATE_CAP_SENSOR, &res);
+
+    /* Check whether the calibration was successull */
+    if (((res & ST25R3916_REG_CAP_SENSOR_RESULT_cs_cal_end) != ST25R3916_REG_CAP_SENSOR_RESULT_cs_cal_end) ||
+        ((res & ST25R3916_REG_CAP_SENSOR_RESULT_cs_cal_err) == ST25R3916_REG_CAP_SENSOR_RESULT_cs_cal_err) || (ret != ERR_NONE)) {
+      return ERR_IO;
+    }
+
+    if (result != NULL) {
+      (*result) = (uint8_t)(res >> ST25R3916_REG_CAP_SENSOR_RESULT_cs_cal_shift);
+    }
+
+    return ERR_NONE;
   }
-
-  return ERR_NONE;
 }
 
 
@@ -481,7 +502,7 @@ bool RfalRfST25R3916Class::st25r3916CheckChipID(uint8_t *rev)
   uint8_t id;
   st25r3916ReadRegister(ST25R3916_REG_IC_IDENTITY, &id);
 
-  const uint8_t chipId = id & ST25R3916_REG_IC_IDENTITY_ic_type_mask;
+  chipId = id & ST25R3916_REG_IC_IDENTITY_ic_type_mask;
 
   if (rev) {
     *rev = (id & ST25R3916_REG_IC_IDENTITY_ic_rev_mask);
@@ -489,6 +510,18 @@ bool RfalRfST25R3916Class::st25r3916CheckChipID(uint8_t *rev)
 
   return (chipId == ST25R3916_REG_IC_IDENTITY_ic_type_st25r3916 ||
           chipId == ST25R3916_REG_IC_IDENTITY_ic_type_st25r3916b);
+}
+
+/*******************************************************************************/
+bool RfalRfST25R3916Class::st25r3916ChipIsST25R3916()
+{
+  return (chipId == ST25R3916_REG_IC_IDENTITY_ic_type_st25r3916);
+}
+
+/*******************************************************************************/
+bool RfalRfST25R3916Class::st25r3916ChipIsST25R3916B()
+{
+  return (chipId == ST25R3916_REG_IC_IDENTITY_ic_type_st25r3916b);
 }
 
 /*******************************************************************************/
@@ -520,10 +553,27 @@ ReturnCode RfalRfST25R3916Class::st25r3916GetRegsDump(t_st25r3916Regs *regDump)
   st25r3916ReadRegister(ST25R3916_REG_RES_AM_MOD,        &regDump->RsB[regIt++]);
   st25r3916ReadRegister(ST25R3916_REG_TX_DRIVER_STATUS,  &regDump->RsB[regIt++]);
   st25r3916ReadRegister(ST25R3916_REG_REGULATOR_RESULT,  &regDump->RsB[regIt++]);
+
+  if (st25r3916ChipIsST25R3916B())
+  {
+    st25r3916ReadRegister( ST25R3916_REG_AWS_CONF1,  &regDump->RsB[regIt++] );
+    st25r3916ReadRegister( ST25R3916_REG_AWS_CONF2,  &regDump->RsB[regIt++] );
+  }
+
   st25r3916ReadRegister(ST25R3916_REG_OVERSHOOT_CONF1,   &regDump->RsB[regIt++]);
   st25r3916ReadRegister(ST25R3916_REG_OVERSHOOT_CONF2,   &regDump->RsB[regIt++]);
   st25r3916ReadRegister(ST25R3916_REG_UNDERSHOOT_CONF1,  &regDump->RsB[regIt++]);
   st25r3916ReadRegister(ST25R3916_REG_UNDERSHOOT_CONF2,  &regDump->RsB[regIt++]);
+
+  if (st25r3916ChipIsST25R3916B())
+  {
+    st25r3916ReadRegister( ST25R3916_REG_AWS_TIME1,   &regDump->RsB[regIt++] );
+    st25r3916ReadRegister( ST25R3916_REG_AWS_TIME2,   &regDump->RsB[regIt++] );
+    st25r3916ReadRegister( ST25R3916_REG_AWS_TIME3,   &regDump->RsB[regIt++] );
+    st25r3916ReadRegister( ST25R3916_REG_AWS_TIME4,   &regDump->RsB[regIt++] );
+    st25r3916ReadRegister( ST25R3916_REG_AWS_TIME5,   &regDump->RsB[regIt++] );
+    st25r3916ReadRegister( ST25R3916_REG_AWS_RC_CAL,  &regDump->RsB[regIt++] );
+  }
 
   return ERR_NONE;
 }
@@ -537,6 +587,7 @@ bool RfalRfST25R3916Class::st25r3916IsCmdValid(uint8_t cmd)
       !((cmd >= ST25R3916_CMD_MASK_RECEIVE_DATA)       && (cmd <= ST25R3916_CMD_MEASURE_AMPLITUDE))         &&
       !((cmd >= ST25R3916_CMD_RESET_RXGAIN)            && (cmd <= ST25R3916_CMD_ADJUST_REGULATORS))         &&
       !((cmd >= ST25R3916_CMD_CALIBRATE_DRIVER_TIMING) && (cmd <= ST25R3916_CMD_START_PPON2_TIMER))         &&
+      (st25r3916ChipIsST25R3916() || (cmd != ST25R3916_CMD_RC_CAL))                                         &&
       (cmd != ST25R3916_CMD_SPACE_B_ACCESS)           && (cmd != ST25R3916_CMD_STOP_NRT)) {
     return false;
   }
