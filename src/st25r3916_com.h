@@ -694,37 +694,37 @@
 /* ST25R3916 only */
 #define ST25R3916_REG_TX_DRIVER_am_mod_40percent              (0xfU<<4)
 /* ST25R3916B only */
-#define ST25R3916_REG_TX_DRIVER_am_mod_0percent               (0x0U<<4)
+#define ST25R3916B_REG_TX_DRIVER_am_mod_0percent              (0x0U<<4)
 /* ST25R3916B only */
-#define ST25R3916_REG_TX_DRIVER_am_mod_8percent               (0x1U<<4)
+#define ST25R3916B_REG_TX_DRIVER_am_mod_8percent              (0x1U<<4)
 /* ST25R3916B only */
-#define ST25R3916_REG_TX_DRIVER_am_mod_10percent              (0x2U<<4)
+#define ST25R3916B_REG_TX_DRIVER_am_mod_10percent             (0x2U<<4)
 /* ST25R3916B only */
-#define ST25R3916_REG_TX_DRIVER_am_mod_11percent              (0x3U<<4)
+#define ST25R3916B_REG_TX_DRIVER_am_mod_11percent             (0x3U<<4)
 /* ST25R3916B only */
-#define ST25R3916_REG_TX_DRIVER_am_mod_12percent              (0x4U<<4)
+#define ST25R3916B_REG_TX_DRIVER_am_mod_12percent             (0x4U<<4)
 /* ST25R3916B only */
-#define ST25R3916_REG_TX_DRIVER_am_mod_13percent              (0x5U<<4)
+#define ST25R3916B_REG_TX_DRIVER_am_mod_13percent             (0x5U<<4)
 /* ST25R3916B only */
-#define ST25R3916_REG_TX_DRIVER_am_mod_14percent              (0x6U<<4)
+#define ST25R3916B_REG_TX_DRIVER_am_mod_14percent             (0x6U<<4)
 /* ST25R3916B only */
-#define ST25R3916_REG_TX_DRIVER_am_mod_15percent              (0x7U<<4)
+#define ST25R3916B_REG_TX_DRIVER_am_mod_15percent             (0x7U<<4)
 /* ST25R3916B only */
-#define ST25R3916_REG_TX_DRIVER_am_mod_20percent              (0x8U<<4)
+#define ST25R3916B_REG_TX_DRIVER_am_mod_20percent             (0x8U<<4)
 /* ST25R3916B only */
-#define ST25R3916_REG_TX_DRIVER_am_mod_25percent              (0x9U<<4)
+#define ST25R3916B_REG_TX_DRIVER_am_mod_25percent             (0x9U<<4)
 /* ST25R3916B only */
-#define ST25R3916_REG_TX_DRIVER_am_mod_30percent              (0xaU<<4)
+#define ST25R3916B_REG_TX_DRIVER_am_mod_30percent             (0xaU<<4)
 /* ST25R3916B only */
-#define ST25R3916_REG_TX_DRIVER_am_mod_40percent              (0xbU<<4)
+#define ST25R3916B_REG_TX_DRIVER_am_mod_40percent             (0xbU<<4)
 /* ST25R3916B only */
-#define ST25R3916_REG_TX_DRIVER_am_mod_50percent              (0xcU<<4)
+#define ST25R3916B_REG_TX_DRIVER_am_mod_50percent             (0xcU<<4)
 /* ST25R3916B only */
-#define ST25R3916_REG_TX_DRIVER_am_mod_60percent              (0xdU<<4)
+#define ST25R3916B_REG_TX_DRIVER_am_mod_60percent             (0xdU<<4)
 /* ST25R3916B only */
-#define ST25R3916_REG_TX_DRIVER_am_mod_70percent              (0xeU<<4)
+#define ST25R3916B_REG_TX_DRIVER_am_mod_70percent             (0xeU<<4)
 /* ST25R3916B only */
-#define ST25R3916_REG_TX_DRIVER_am_mod_82percent              (0xfU<<4)
+#define ST25R3916B_REG_TX_DRIVER_am_mod_82percent             (0xfU<<4)
 #define ST25R3916_REG_TX_DRIVER_am_mod_mask                   (0xfU<<4)
 #define ST25R3916_REG_TX_DRIVER_am_mod_shift                  (4U)
 #define ST25R3916_REG_TX_DRIVER_d_res3                        (1U<<3)
