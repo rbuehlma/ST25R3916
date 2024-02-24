@@ -108,6 +108,7 @@ typedef struct {
 typedef struct {
   uint32_t                GT;          /*!< RFAL's GT timer           */
   uint32_t                RXE;         /*!< Timer between RXS and RXE */
+  uint32_t                txRx;        /*!< Transceive sanity timer   */
 } rfalTimers;
 
 
@@ -361,6 +362,11 @@ typedef void (*ST25R3916IrqHandler)(void);
 * GLOBAL MACROS
 ******************************************************************************
 */
+
+/*! Calculates Transceive Sanity Timer. It accounts for the slowest bit rate and the longest data format
+ *    1s for transmission and reception of a 4K message at 106kpbs (~425ms each direction)
+ *       plus TxRx preparation and FIFO load over Serial Interface                                      */
+#define rfalCalcSanityTmr( fwt )                 (uint16_t)(1000U + rfalConv1fcToMs((fwt)))
 
 #define rfalCalcNumBytes( nBits )                (((uint32_t)(nBits) + 7U) / 8U)                                   /*!< Returns the number of bytes required to fit given the number of bits */
 

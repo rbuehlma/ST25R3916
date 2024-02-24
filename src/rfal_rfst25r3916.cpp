@@ -124,6 +124,7 @@ ReturnCode RfalRfST25R3916Class::rfalInitialize(void)
   gRFAL.timings.GT         = RFAL_TIMING_NONE;
 
   gRFAL.tmr.GT             = RFAL_TIMING_NONE;
+  gRFAL.tmr.txRx           = RFAL_TIMING_NONE;
 
   gRFAL.callbacks.preTxRx  = NULL;
   gRFAL.callbacks.postTxRx = NULL;
@@ -971,7 +972,7 @@ ReturnCode RfalRfST25R3916Class::rfalTransceiveBlockingRx(void)
   do {
     rfalWorker();
     ret = rfalGetTransceiveStatus();
-  } while (rfalIsTransceiveInRx() && (ret == ERR_BUSY));
+  } while (rfalIsTransceiveInRx() || (ret == ERR_BUSY));
 
   return ret;
 }
@@ -998,6 +999,19 @@ ReturnCode RfalRfST25R3916Class::rfalTransceiveBlockingTxRx(uint8_t *txBuf, uint
 ReturnCode RfalRfST25R3916Class::rfalRunTransceiveWorker(void)
 {
   if (gRFAL.state == RFAL_STATE_TXRX) {
+    /*******************************************************************************/
+    /* Check Transceive Sanity Timer has expired */
+    if( gRFAL.tmr.txRx != RFAL_TIMING_NONE )
+    {
+        if( rfalTimerisExpired( gRFAL.tmr.txRx ) )
+        {
+            /* If sanity timer has expired abort ongoing transceive and signal error */ 
+            gRFAL.TxRx.status = ERR_IO;
+            gRFAL.TxRx.state  = RFAL_TXRX_STATE_RX_FAIL;
+        }
+    }
+
+    /*******************************************************************************/
     /* Run Tx or Rx state machines */
     if (rfalIsTransceiveInTx()) {
       rfalTransceiveTx();
@@ -1225,6 +1239,15 @@ void RfalRfST25R3916Class::rfalPrepareTransceive(void)
   if (rfalIsModeActiveComm(gRFAL.mode)) {
     maskInterrupts |= (ST25R3916_IRQ_MASK_EOF  | ST25R3916_IRQ_MASK_EON  | ST25R3916_IRQ_MASK_PPON2 | ST25R3916_IRQ_MASK_CAT | ST25R3916_IRQ_MASK_CAC);
   }
+
+    /*******************************************************************************/
+    /* Start transceive Sanity Timer if a FWT is used */
+    if( (gRFAL.TxRx.ctx.fwt != RFAL_FWT_NONE) && (gRFAL.TxRx.ctx.fwt != 0U) )
+    {
+        rfalTimerStart( gRFAL.tmr.txRx, rfalCalcSanityTmr( gRFAL.TxRx.ctx.fwt ) );
+    }
+    /*******************************************************************************/
+
 
   /*******************************************************************************/
   /* clear and enable these interrupts */
