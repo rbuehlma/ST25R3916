@@ -1992,6 +1992,7 @@ class RfalRfST25R3916Class : public RfalRfClass {
     uint32_t aatCalcF(const struct st25r3916AatTuneParams *tuningParams, uint8_t amplitude, uint8_t phase);
     ReturnCode aatStepDacVals(const struct st25r3916AatTuneParams *tuningParams, uint8_t *a, uint8_t *b, int32_t dir);
     void setISRPending(void);
+    bool isISRPending(void);
     bool isBusBusy(void);
     /*!
      *****************************************************************************

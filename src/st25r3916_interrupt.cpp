@@ -152,6 +152,11 @@ uint32_t RfalRfST25R3916Class::st25r3916WaitForInterruptsTimed(uint32_t mask, ui
 
   /* Run until specific interrupt has happen or the timer has expired */
   do {
+    if (isISRPending())
+    {
+        isr_pending = false;
+        st25r3916Isr();
+    }
     status = (st25r3916interrupt.status & mask);
   } while ((!timerIsExpired(tmrDelay) || (tmo == 0U)) && (status == 0U));
 

@@ -79,7 +79,7 @@ ReturnCode RfalRfST25R3916Class::rfalInitialize(void)
   digitalWrite(cs_pin, HIGH);
 
   pinMode(int_pin, INPUT);
-  Callback<void()>::func = std::bind(&RfalRfST25R3916Class::st25r3916Isr, this);
+  Callback<void()>::func = std::bind(&RfalRfST25R3916Class::setISRPending, this);
   irq_handler = static_cast<ST25R3916IrqHandler>(Callback<void()>::callback);
   attachInterrupt(int_pin, irq_handler, RISING);
 
@@ -1072,6 +1072,11 @@ ReturnCode RfalRfST25R3916Class::rfalGetTransceiveRSSI(uint16_t *rssi)
 /*******************************************************************************/
 void RfalRfST25R3916Class::rfalWorker(void)
 {
+  if (isISRPending()) {
+    isr_pending = false;
+    st25r3916Isr();
+  }
+
   switch (gRFAL.state) {
     case RFAL_STATE_TXRX:
       rfalRunTransceiveWorker();
@@ -2940,6 +2945,13 @@ ReturnCode RfalRfST25R3916Class::rfalChipMeasurePowerSupply(uint8_t param, uint8
 void RfalRfST25R3916Class::setISRPending(void)
 {
   isr_pending = true;
+}
+
+bool RfalRfST25R3916Class::isISRPending(void)
+{
+  // It's possible we've missed the interrupt, but if
+  // so then the IRQ line will still be high
+  return (isr_pending || (digitalRead(int_pin) == HIGH));
 }
 
 bool RfalRfST25R3916Class::isBusBusy(void)
