@@ -54,7 +54,7 @@ RfalRfST25R3916Class::RfalRfST25R3916Class(SPIClass *spi, int cs_pin, int int_pi
   irq_handler = NULL;
 }
 
-RfalRfST25R3916Class::RfalRfST25R3916Class(TwoWire *i2c, int int_pin) : dev_i2c(i2c), int_pin(int_pin)
+RfalRfST25R3916Class::RfalRfST25R3916Class(TwoWire *i2c, byte i2c_address, int int_pin) : dev_i2c(i2c), i2c_address(i2c_address), int_pin(int_pin)
 {
   memset(&gRFAL, 0, sizeof(rfal));
   memset(&gRfalAnalogConfigMgmt, 0, sizeof(rfalAnalogConfigMgmt));
@@ -75,8 +75,10 @@ ReturnCode RfalRfST25R3916Class::rfalInitialize(void)
 {
   ReturnCode err;
 
-  pinMode(cs_pin, OUTPUT);
-  digitalWrite(cs_pin, HIGH);
+  if (!i2c_enabled) {
+    pinMode(cs_pin, OUTPUT);
+    digitalWrite(cs_pin, HIGH);
+  }
 
   pinMode(int_pin, INPUT);
   Callback<void()>::func = std::bind(&RfalRfST25R3916Class::setISRPending, this);

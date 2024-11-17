@@ -45,7 +45,6 @@
 */
 
 #define ST25R3916_OPTIMIZE              true                           /*!< Optimization switch: false always write value to register      */
-#define ST25R3916_I2C_ADDR              (0xA0U >> 1)                   /*!< ST25R3916's default I2C address                                */
 #define ST25R3916_REG_LEN               1U                             /*!< Byte length of a ST25R3916 register                            */
 
 #define ST25R3916_WRITE_MODE            (0U << 6)                      /*!< ST25R3916 Operation Mode: Write                                */
@@ -108,7 +107,7 @@ ReturnCode RfalRfST25R3916Class::st25r3916ReadMultipleRegisters(uint8_t reg, uin
       digitalWrite(cs_pin, HIGH);
       dev_spi->endTransaction();
     } else {
-      dev_i2c->beginTransmission((uint8_t)(ST25R3916_I2C_ADDR & 0x7F));
+      dev_i2c->beginTransmission((uint8_t)(i2c_address & 0x7F));
       /* If is a space-B register send a direct command first */
       if ((reg & ST25R3916_SPACE_B) != 0U) {
         dev_i2c->write(ST25R3916_CMD_SPACE_B_ACCESS);
@@ -116,7 +115,7 @@ ReturnCode RfalRfST25R3916Class::st25r3916ReadMultipleRegisters(uint8_t reg, uin
 
       dev_i2c->write((reg & ~ST25R3916_SPACE_B) | ST25R3916_READ_MODE);
       dev_i2c->endTransmission(false);
-      dev_i2c->requestFrom(((uint8_t)(ST25R3916_I2C_ADDR & 0x7F)), (uint8_t) length);
+      dev_i2c->requestFrom(((uint8_t)(i2c_address & 0x7F)), (uint8_t) length);
 
       int i = 0;
       while (dev_i2c->available()) {
@@ -170,7 +169,7 @@ ReturnCode RfalRfST25R3916Class::st25r3916WriteMultipleRegisters(uint8_t reg, co
       digitalWrite(cs_pin, HIGH);
       dev_spi->endTransaction();
     } else {
-      dev_i2c->beginTransmission((uint8_t)(ST25R3916_I2C_ADDR & 0x7F));
+      dev_i2c->beginTransmission((uint8_t)(i2c_address & 0x7F));
       /* If is a space-B register send a direct command first */
       if ((reg & ST25R3916_SPACE_B) != 0U) {
         dev_i2c->write(ST25R3916_CMD_SPACE_B_ACCESS);
@@ -220,7 +219,7 @@ ReturnCode RfalRfST25R3916Class::st25r3916WriteFifo(const uint8_t *values, uint1
       digitalWrite(cs_pin, HIGH);
       dev_spi->endTransaction();
     } else {
-      dev_i2c->beginTransmission((uint8_t)(ST25R3916_I2C_ADDR & 0x7F));
+      dev_i2c->beginTransmission((uint8_t)(i2c_address & 0x7F));
 
       dev_i2c->write(ST25R3916_FIFO_LOAD);
 
@@ -257,10 +256,10 @@ ReturnCode RfalRfST25R3916Class::st25r3916ReadFifo(uint8_t *buf, uint16_t length
       digitalWrite(cs_pin, HIGH);
       dev_spi->endTransaction();
     } else {
-      dev_i2c->beginTransmission((uint8_t)(ST25R3916_I2C_ADDR & 0x7F));
+      dev_i2c->beginTransmission((uint8_t)(i2c_address & 0x7F));
       dev_i2c->write(ST25R3916_FIFO_READ);
       dev_i2c->endTransmission(false);
-      dev_i2c->requestFrom(((uint8_t)(ST25R3916_I2C_ADDR & 0x7F)), (uint8_t) length);
+      dev_i2c->requestFrom(((uint8_t)(i2c_address & 0x7F)), (uint8_t) length);
 
       int i = 0;
       while (dev_i2c->available()) {
@@ -305,7 +304,7 @@ ReturnCode RfalRfST25R3916Class::st25r3916WritePTMem(const uint8_t *values, uint
       digitalWrite(cs_pin, HIGH);
       dev_spi->endTransaction();
     } else {
-      dev_i2c->beginTransmission((uint8_t)(ST25R3916_I2C_ADDR & 0x7F));
+      dev_i2c->beginTransmission((uint8_t)(i2c_address & 0x7F));
 
       dev_i2c->write(ST25R3916_PT_A_CONFIG_LOAD);
 
@@ -349,10 +348,10 @@ ReturnCode RfalRfST25R3916Class::st25r3916ReadPTMem(uint8_t *values, uint16_t le
       digitalWrite(cs_pin, HIGH);
       dev_spi->endTransaction();
     } else {
-      dev_i2c->beginTransmission((uint8_t)(ST25R3916_I2C_ADDR & 0x7F));
+      dev_i2c->beginTransmission((uint8_t)(i2c_address & 0x7F));
       dev_i2c->write(ST25R3916_PT_MEM_READ);
       dev_i2c->endTransmission(false);
-      dev_i2c->requestFrom(((uint8_t)(ST25R3916_I2C_ADDR & 0x7F)), (uint8_t)(ST25R3916_REG_LEN + length));
+      dev_i2c->requestFrom(((uint8_t)(i2c_address & 0x7F)), (uint8_t)(ST25R3916_REG_LEN + length));
 
       int i = 0;
       while (dev_i2c->available()) {
@@ -401,7 +400,7 @@ ReturnCode RfalRfST25R3916Class::st25r3916WritePTMemF(const uint8_t *values, uin
       digitalWrite(cs_pin, HIGH);
       dev_spi->endTransaction();
     } else {
-      dev_i2c->beginTransmission((uint8_t)(ST25R3916_I2C_ADDR & 0x7F));
+      dev_i2c->beginTransmission((uint8_t)(i2c_address & 0x7F));
 
       dev_i2c->write(ST25R3916_PT_F_CONFIG_LOAD);
 
@@ -447,7 +446,7 @@ ReturnCode RfalRfST25R3916Class::st25r3916WritePTMemTSN(const uint8_t *values, u
       digitalWrite(cs_pin, HIGH);
       dev_spi->endTransaction();
     } else {
-      dev_i2c->beginTransmission((uint8_t)(ST25R3916_I2C_ADDR & 0x7F));
+      dev_i2c->beginTransmission((uint8_t)(i2c_address & 0x7F));
 
       dev_i2c->write(ST25R3916_PT_TSN_DATA_LOAD);
 
@@ -481,7 +480,7 @@ ReturnCode RfalRfST25R3916Class::st25r3916ExecuteCommand(uint8_t cmd)
     digitalWrite(cs_pin, HIGH);
     dev_spi->endTransaction();
   } else {
-    dev_i2c->beginTransmission((uint8_t)(ST25R3916_I2C_ADDR & 0x7F));
+    dev_i2c->beginTransmission((uint8_t)(i2c_address & 0x7F));
 
     dev_i2c->write((cmd | ST25R3916_CMD_MODE));
 
@@ -515,12 +514,12 @@ ReturnCode RfalRfST25R3916Class::st25r3916ReadTestRegister(uint8_t reg, uint8_t 
     digitalWrite(cs_pin, HIGH);
     dev_spi->endTransaction();
   } else {
-    dev_i2c->beginTransmission((uint8_t)(ST25R3916_I2C_ADDR & 0x7F));
+    dev_i2c->beginTransmission((uint8_t)(i2c_address & 0x7F));
 
     dev_i2c->write(ST25R3916_CMD_TEST_ACCESS);
     dev_i2c->write((reg | ST25R3916_READ_MODE));
     dev_i2c->endTransmission(false);
-    dev_i2c->requestFrom(((uint8_t)(ST25R3916_I2C_ADDR & 0x7F)), ST25R3916_REG_LEN);
+    dev_i2c->requestFrom(((uint8_t)(i2c_address & 0x7F)), ST25R3916_REG_LEN);
 
     if (dev_i2c->available()) {
       *val = dev_i2c->read();
@@ -557,7 +556,7 @@ ReturnCode RfalRfST25R3916Class::st25r3916WriteTestRegister(uint8_t reg, uint8_t
     digitalWrite(cs_pin, HIGH);
     dev_spi->endTransaction();
   } else {
-    dev_i2c->beginTransmission((uint8_t)(ST25R3916_I2C_ADDR & 0x7F));
+    dev_i2c->beginTransmission((uint8_t)(i2c_address & 0x7F));
 
     dev_i2c->write(ST25R3916_CMD_TEST_ACCESS);
 

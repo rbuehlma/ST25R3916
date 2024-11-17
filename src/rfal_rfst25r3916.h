@@ -400,7 +400,7 @@ class RfalRfST25R3916Class : public RfalRfClass {
     */
 
     RfalRfST25R3916Class(SPIClass *spi, int cs_pin, int int_pin, uint32_t spi_speed = 5000000);
-    RfalRfST25R3916Class(TwoWire *i2c, int int_pin);
+    RfalRfST25R3916Class(TwoWire *i2c, byte i2c_address, int int_pin);
     ReturnCode rfalInitialize(void);
     ReturnCode rfalCalibrate(void);
     ReturnCode rfalAdjustRegulators(uint16_t *result);
@@ -491,7 +491,7 @@ class RfalRfST25R3916Class : public RfalRfClass {
      * NOTE: Function does not check the validity of the given Table contents
      *
      * \param[in]  configTbl:     location of config Table to be loaded
-     * \param[in]  configTblSize: size of the config Table to be loaded
+     * \param[in]  configTi2c_addressblSize: size of the config Table to be loaded
      *
      * \return ERR_NONE    : if setting is updated
      * \return ERR_PARAM   : if configTbl is invalid
@@ -2004,6 +2004,7 @@ class RfalRfST25R3916Class : public RfalRfClass {
     void  st25r3916Isr(void);
 
     TwoWire *dev_i2c;
+    byte i2c_address;
     SPIClass *dev_spi;
     int cs_pin;
     int int_pin;
